@@ -1,9 +1,11 @@
 import matplotlib
-matplotlib.use('Agg')  # Grafik üretimi yok ama import gerekiyor
+matplotlib.use('Agg')
 from flask import Flask, render_template, request, send_file, redirect, url_for
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import io
+import os
 
 app = Flask(__name__)
 
@@ -27,6 +29,40 @@ def simulate_markov(initial_state, transitions, steps):
     for _ in range(steps - 1):
         states.append(states[-1] @ transitions)
     return np.array(states)
+
+# Grafik Oluşturucu
+def create_projection_graphs(df):
+    static_path = os.path.join('static', 'graphs')
+    os.makedirs(static_path, exist_ok=True)
+
+    # Kullanıcı grafiği
+    plt.figure(figsize=(10, 6))
+    plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
+    plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
+    plt.xlabel("Ay")
+    plt.ylabel("Kullanıcı Sayısı")
+    plt.title("Kullanıcı Sayısı Projeksiyonu")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_path, 'kullanici_projeksiyon.png'))
+    plt.close()
+
+    # İçerik grafiği
+    plt.figure(figsize=(10, 6))
+    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='green', marker='o')
+    plt.plot(df["Ay"], df["Icerik (Poisson)"], label="İçerik (Poisson)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer)"], label="İçerik (Lineer)", color='purple', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
+    plt.xlabel("Ay")
+    plt.ylabel("İçerik Sayısı")
+    plt.title("İçerik Sayısı Projeksiyonu")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_path, 'icerik_projeksiyon.png'))
+    plt.close()
 
 projection_df_global = None
 
@@ -58,9 +94,9 @@ def index():
             form_values['initial_content'] = request.form['initial_content']
             form_values['content_scenario'] = request.form.get('content_scenario', 'realistic')
 
-            # Değer dönüşümleri (p ve q % olarak girildiği için 100'e bölünüyor)
+            # Değer dönüşümleri
             m = int(form_values['market_size'])
-            p = float(form_values['p']) / 100  # %'den orana çevir
+            p = float(form_values['p']) / 100
             q = float(form_values['q']) / 100
             writer_ratio = float(form_values['writer_ratio']) / 100
             daily_posts = float(form_values['daily_posts'])
@@ -70,14 +106,12 @@ def index():
             months = np.arange(1, 13)
             monthly_post_rate = daily_posts * 30
 
-            # Kullanıcı projeksiyonları (orijinal)
             bass_new = bass_model_vectorized(months, p, q, m)
             bass_cum = np.cumsum(bass_new) + initial_users
 
             logistic = logistic_growth(months, m, 0.5, 6) + initial_users
             log_logistic = log_logistic_growth(months, m, 6, 2) + initial_users
 
-            # Senaryoya göre ölçeklendirme faktörleri
             if form_values['content_scenario'] == 'optimistic':
                 scale_factor = 1.2
             elif form_values['content_scenario'] == 'pessimistic':
@@ -85,18 +119,15 @@ def index():
             else:
                 scale_factor = 1.0
 
-            # Senaryo bazlı kullanıcı sayıları (ölçeklendirilmiş)
             bass_cum_scenario = bass_cum * scale_factor
             logistic_scenario = logistic * scale_factor
             log_logistic_scenario = log_logistic * scale_factor
 
-            # İçerik projeksiyonları (senaryo bazlı kullanıcı sayısı üzerinden)
             bass_content = initial_content + np.cumsum(bass_cum_scenario * writer_ratio * monthly_post_rate)
             poisson_content = initial_content + np.cumsum(logistic_scenario * writer_ratio * monthly_post_rate)
             linear_content = initial_content + np.cumsum(logistic_scenario * writer_ratio * monthly_post_rate * 0.9)
             log_logistic_content = initial_content + np.cumsum(log_logistic_scenario * writer_ratio * monthly_post_rate)
 
-            # Markov simülasyonu
             transitions = np.array([
                 [0.85, 0.1, 0.05],
                 [0.05, 0.75, 0.20],
@@ -105,7 +136,6 @@ def index():
             initial_state = np.array([1.0, 0.0, 0.0])
             markov_states = simulate_markov(initial_state, transitions, 12)
 
-            # DataFrame oluşturma
             projection_df = pd.DataFrame({
                 "Ay": months,
                 "Kullanici (Bass)": bass_cum_scenario.astype(int),
@@ -120,6 +150,7 @@ def index():
             })
 
             projection_df_global = projection_df.copy()
+            create_projection_graphs(projection_df)
 
         except Exception as e:
             error = str(e)
