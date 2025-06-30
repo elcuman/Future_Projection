@@ -5,12 +5,11 @@
     <title>Kullanıcı & İçerik Projeksiyonu</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <style>
-      /* Bass model sütunlarını koyu yeşil ve beyaz yazı ile vurgula */
-      .bass-col {
-        background-color: #198754 !important; /* Bootstrap success koyu yeşil */
-        color: white !important;
-        font-weight: 700;
-      }
+        .bass-col {
+            background-color: #198754 !important;
+            color: white !important;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body class="container py-5">
@@ -24,49 +23,49 @@
         <div class="col-md-6">
             <label for="market_size" class="form-label">Pazar Büyüklüğü (Toplam Potansiyel Kullanıcı):</label>
             <input id="market_size" name="market_size" type="number" min="1" required class="form-control"
-                value="{{ form_values.market_size }}" />
+                   value="{{ form_values.market_size }}" />
             <div class="form-text">Modelin hedeflediği toplam kullanıcı sayısı</div>
         </div>
 
         <div class="col-md-6">
             <label for="p" class="form-label">Innovator Adoption Rate (%):</label>
             <input id="p" name="p" type="number" step="0.01" min="0" max="100" required class="form-control"
-                value="{{ form_values.p }}" />
+                   value="{{ form_values.p }}" />
             <div class="form-text">Bağımsız olarak ürünü ilk benimseyen kullanıcıların yüzdesi</div>
         </div>
 
         <div class="col-md-6">
             <label for="q" class="form-label">Imitator Adoption Rate (%):</label>
             <input id="q" name="q" type="number" step="0.01" min="0" max="100" required class="form-control"
-                value="{{ form_values.q }}" />
+                   value="{{ form_values.q }}" />
             <div class="form-text">Mevcut kullanıcılar tarafından etkilenerek ürünü benimseyen kullanıcıların yüzdesi</div>
         </div>
 
         <div class="col-md-6">
             <label for="writer_ratio" class="form-label">İçerik Üreticisi Oranı (%):</label>
             <input id="writer_ratio" name="writer_ratio" type="number" step="0.1" min="0" max="100" required
-                class="form-control" value="{{ form_values.writer_ratio }}" />
+                   class="form-control" value="{{ form_values.writer_ratio }}" />
             <div class="form-text">Toplam kullanıcıların yüzde kaçının içerik ürettiği</div>
         </div>
 
         <div class="col-md-6">
             <label for="daily_posts" class="form-label">Günlük Ortalama İçerik Sayısı:</label>
             <input id="daily_posts" name="daily_posts" type="number" step="0.0001" min="0" required
-                class="form-control" value="{{ form_values.daily_posts }}" />
+                   class="form-control" value="{{ form_values.daily_posts }}" />
             <div class="form-text">Bir içerik üreticisinin günlük ortalama ürettiği içerik sayısı</div>
         </div>
 
         <div class="col-md-6">
             <label for="initial_users" class="form-label">Mevcut Toplam Kullanıcı Sayısı:</label>
             <input id="initial_users" name="initial_users" type="number" min="0" required class="form-control"
-                value="{{ form_values.initial_users }}" />
+                   value="{{ form_values.initial_users }}" />
             <div class="form-text">Model başlangıcında mevcut aktif kullanıcı sayısı</div>
         </div>
 
         <div class="col-md-6">
             <label for="initial_content" class="form-label">Mevcut Toplam İçerik Sayısı:</label>
             <input id="initial_content" name="initial_content" type="number" min="0" required class="form-control"
-                value="{{ form_values.initial_content }}" />
+                   value="{{ form_values.initial_content }}" />
             <div class="form-text">Model başlangıcında mevcut içerik sayısı</div>
         </div>
 
@@ -95,12 +94,10 @@
                     <th class="bass-col">Kullanıcı (Bass)</th>
                     <th>Kullanıcı (Logistic)</th>
                     <th>Kullanıcı (Log-Logistic)</th>
-
                     <th class="bass-col">İçerik (Bass)</th>
                     <th>İçerik (Poisson)</th>
                     <th>İçerik (Lineer)</th>
                     <th>İçerik (Log-Logistic)</th>
-
                     <th>Aktif (%)</th>
                     <th>Churn (%)</th>
                 </tr>
@@ -109,18 +106,15 @@
                 {% for row in table.itertuples() %}
                 <tr>
                     <td>{{ row.Ay }}</td>
-
-                    <td class="bass-col">{{ row._2 }}</td>  <!-- Kullanıcı (Bass) -->
-                    <td>{{ row._3 }}</td>                   <!-- Kullanıcı (Logistic) -->
-                    <td>{{ row._4 }}</td>                   <!-- Kullanıcı (Log-Logistic) -->
-
-                    <td class="bass-col">{{ row._5 }}</td>  <!-- İçerik (Bass) -->
-                    <td>{{ row._6 }}</td>                   <!-- İçerik (Poisson) -->
-                    <td>{{ row._7 }}</td>                   <!-- İçerik (Lineer) -->
-                    <td>{{ row._8 }}</td>                   <!-- İçerik (Log-Logistic) -->
-
-                    <td>{{ row._9 }}</td>                   <!-- Aktif (%) -->
-                    <td>{{ row._10 }}</td>                  <!-- Churn (%) -->
+                    <td class="bass-col">{{ row._2 }}</td>
+                    <td>{{ row._3 }}</td>
+                    <td>{{ row._4 }}</td>
+                    <td class="bass-col">{{ row._5 }}</td>
+                    <td>{{ row._6 }}</td>
+                    <td>{{ row._7 }}</td>
+                    <td>{{ row._8 }}</td>
+                    <td>{{ row._9 }}</td>
+                    <td>{{ row._10 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -131,11 +125,16 @@
         <a href="{{ url_for('download_excel') }}" class="btn btn-success">Excel Dosyasını İndir</a>
     </div>
 
-    <!-- Bass Difüzyon Modeli Akademik Referansı -->
+    <h2 class="mt-5 mb-3 text-center">Projeksiyon Grafikleri</h2>
+    <div class="text-center mb-5">
+        <img src="{{ url_for('static', filename='graphs/kullanici_projeksiyon.png') }}" class="img-fluid mb-4" alt="Kullanıcı Grafiği">
+        <img src="{{ url_for('static', filename='graphs/icerik_projeksiyon.png') }}" class="img-fluid" alt="İçerik Grafiği">
+    </div>
+
     <div class="text-muted small mt-4">
         <p><strong>Modelleme Notu:</strong> Kullanıcı yayılımı <em>Bass Difüzyon Modeli</em> kullanılarak hesaplanmıştır.</p>
         <p>Kaynak: Bass, F. M. (1969). <em>A new product growth for model consumer durables</em>. <strong>Management Science</strong>, 15(5), 215–227. 
-        <a href="https://doi.org/10.1287/mnsc.15.5.215" target="_blank">doi:10.1287/mnsc.15.5.215</a></p>
+            <a href="https://doi.org/10.1287/mnsc.15.5.215" target="_blank">doi:10.1287/mnsc.15.5.215</a></p>
     </div>
     {% endif %}
 </body>
