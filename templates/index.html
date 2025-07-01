@@ -133,9 +133,30 @@
 
     <div class="text-muted small mt-4">
         <p><strong>Modelleme Notu:</strong> Kullanıcı yayılımı <em>Bass Difüzyon Modeli</em> kullanılarak hesaplanmıştır.</p>
-        <p>Kaynak: Bass, F. M. (1969). <em>A new product growth for model consumer durables</em>. <strong>Management Science</strong>, 15(5), 215–227. 
-            <a href="https://doi.org/10.1287/mnsc.15.5.215" target="_blank">doi:10.1287/mnsc.15.5.215</a></p>
-    </div>
+        <p> Tüik verilerine göre internete erişimi olan kişi sayısı: <strong>75 Milyon Kişidir</strong> </p>
+        <p>Girilen pazar büyüklüğü <strong>{{ form_values.market_size }}</strong> olup, önümüzdeki yıl içerisinde bu kadar kullanıcıya erişileceği öngörülmüştür.</p>
+        <p><strong>Not:</strong> Bass modelindeki <code>p</code> ve <code>q</code> değerleri literatürde genellikle <code>p=0.01–0.03</code> ve <code>q=0.3–0.5</code> aralığında kabul görmektedir.</p>
+        <p>İçerik Üretim Oranları: Sosyal medya platformlarında içerik üreticisi oranı genellikle <em>1% kuralı</em> ile 1–9% arasında değişen kreatör kullanıcılar olarak tanımlanmaktadır.</p>
+        <p>Kaynaklar:</p>
+        <ul>
+            <ul>
+                <li>
+                    Bass, F. M. (1969). <em>A new product growth for model consumer durables</em>. <strong>Management Science</strong>, 15(5), 215–227. 
+                    <br>
+                    <a href="https://doi.org/10.1287/mnsc.15.5.215" target="_blank">Kaynağı Görüntüle</a>
+                </li>
+                <li>
+                    PyMC Marketing Bass Model Örneği:
+                    <br>
+                    <a href="https://www.pymc-marketing.io/en/latest/notebooks/bass/bass_example.html" target="_blank">Örneği Görüntüle</a>
+                </li>
+                <li>
+                    TÜİK Hanehalkı Bilişim Teknolojileri (BT) Kullanım Araştırması:
+                    <br>
+                    <a href="https://data.tuik.gov.tr/Bulten/Index?p=Hanehalki-Bilisim-Teknolojileri-(BT)-Kullanim-Arastirmasi-2024-53492" target="_blank">Raporu Görüntüle</a>
+                </li>
+            </ul>
+        </ul>            
     {% endif %}
 </body>
 </html>
