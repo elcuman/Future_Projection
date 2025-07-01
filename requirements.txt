@@ -1,6 +1,7 @@
 Flask
-pandas
-numpy
 matplotlib
+numpy
+pandas
+seaborn
 xlsxwriter
 gunicorn
