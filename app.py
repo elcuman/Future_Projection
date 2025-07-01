@@ -2,8 +2,10 @@ import matplotlib
 matplotlib.use('Agg')
 from flask import Flask, render_template, request, send_file, redirect, url_for
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import pandas as pd
+import matplotlib.ticker as mtick
 import io
 import os
 
@@ -35,31 +37,41 @@ def create_projection_graphs(df):
     static_path = os.path.join('static', 'graphs')
     os.makedirs(static_path, exist_ok=True)
 
+    sns.set_theme(style="whitegrid", palette="muted", font_scale=1.2)
+
+    months_labels = ['Eylül', 'Ekim', 'Kasım', 'Aralık', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos']
+
     # Kullanıcı grafiği
-    plt.figure(figsize=(10, 6))
-    plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
-    plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
+    plt.figure(figsize=(12, 7))
+    sns.lineplot(x=df["Ay"], y=df["Kullanici (Bass)"], label="Kullanıcı (Bass)", marker='o', linewidth=2)
+    sns.lineplot(x=df["Ay"], y=df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", marker='s', linewidth=2)
+    sns.lineplot(x=df["Ay"], y=df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", marker='^', linewidth=2)
     plt.xlabel("Ay")
     plt.ylabel("Kullanıcı Sayısı")
-    plt.title("Kullanıcı Sayısı Projeksiyonu")
-    plt.legend()
-    plt.grid(True)
+    plt.title("Kullanıcı Sayısı Projeksiyonu", fontsize=16)
+    plt.xticks(df["Ay"], months_labels, rotation=45)
+    plt.gca().yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{int(x):,}'.replace(',', '.')))
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    sns.despine()
     plt.tight_layout()
     plt.savefig(os.path.join(static_path, 'kullanici_projeksiyon.png'))
     plt.close()
 
     # İçerik grafiği
-    plt.figure(figsize=(10, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='green', marker='o')
-    plt.plot(df["Ay"], df["Icerik (Poisson)"], label="İçerik (Poisson)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer)"], label="İçerik (Lineer)", color='purple', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
+    plt.figure(figsize=(12, 7))
+    sns.lineplot(x=df["Ay"], y=df["Icerik (Bass)"], label="İçerik (Bass)", marker='o', linewidth=2)
+    sns.lineplot(x=df["Ay"], y=df["Icerik (Poisson)"], label="İçerik (Poisson)", marker='s', linewidth=2)
+    sns.lineplot(x=df["Ay"], y=df["Icerik (Lineer)"], label="İçerik (Lineer)", marker='D', linewidth=2)
+    sns.lineplot(x=df["Ay"], y=df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", marker='^', linewidth=2)
     plt.xlabel("Ay")
     plt.ylabel("İçerik Sayısı")
-    plt.title("İçerik Sayısı Projeksiyonu")
-    plt.legend()
-    plt.grid(True)
+    plt.title("İçerik Sayısı Projeksiyonu", fontsize=16)
+    plt.xticks(df["Ay"], months_labels, rotation=45)
+    plt.gca().yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{int(x):,}'.replace(',', '.')))
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(fontsize=12)
+    sns.despine()
     plt.tight_layout()
     plt.savefig(os.path.join(static_path, 'icerik_projeksiyon.png'))
     plt.close()
@@ -84,7 +96,6 @@ def index():
 
     if request.method == 'POST':
         try:
-            # Form verilerini al
             form_values['market_size'] = request.form['market_size']
             form_values['p'] = request.form['p']
             form_values['q'] = request.form['q']
@@ -94,7 +105,6 @@ def index():
             form_values['initial_content'] = request.form['initial_content']
             form_values['content_scenario'] = request.form.get('content_scenario', 'realistic')
 
-            # Değer dönüşümleri
             m = int(form_values['market_size'])
             p = float(form_values['p']) / 100
             q = float(form_values['q']) / 100
