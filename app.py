@@ -30,7 +30,6 @@ def simulate_markov(initial_state, transitions, steps):
         states.append(states[-1] @ transitions)
     return np.array(states)
 
-# Türkçe ay adları
 def generate_month_labels(start_date, num_months):
     turkce_aylar = [
         "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
@@ -64,24 +63,19 @@ def create_projection_graphs(df):
         plt.savefig(os.path.join(static_path, filename))
         plt.close()
 
+    # Kullanıcı Grafiği
     plt.figure(figsize=(14, 6))
     plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
     plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
     plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
     finalize_plot("Kullanıcı Projeksiyonu", "Kullanıcı Sayısı", 'kullanici_projeksiyon.png')
 
+    # Kümülatif İçerik Grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass) Aylik"], label="İçerik (Bass)", color='green', marker='o')
-    plt.plot(df["Ay"], df["Icerik (Poisson) Aylik"], label="İçerik (Poisson)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer) Aylik"], label="İçerik (Lineer)", color='purple', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Aylik"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
-    finalize_plot("Aylık İçerik Projeksiyonu", "Aylık İçerik", 'icerik_aylik_projeksiyon.png')
-
-    plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass) Kümülatif"], label="Bass", color='darkgreen', linestyle='-')
-    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="Poisson", color='darkblue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="Lineer", color='indigo', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="Log-Logistic", color='darkorange', linestyle=':')
+    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='darkgreen')
+    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="İçerik (Poisson)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="İçerik (Lineer)", color='purple', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
     finalize_plot("Kümülatif İçerik Projeksiyonu", "Toplam İçerik", 'icerik_kumulatif_projeksiyon.png')
 
 projection_df_global = None
@@ -170,7 +164,6 @@ def index():
             linear_content = initial_content + np.cumsum(linear_content_monthly)
             log_logistic_content = initial_content + np.cumsum(log_logistic_content_monthly)
 
-            # 📌 Projeksiyon Eylül 2025'ten başlasın
             start_date = datetime(2025, 9, 1)
             month_labels = generate_month_labels(start_date, proj_months)
 
@@ -179,16 +172,12 @@ def index():
                 "Kullanici (Bass)": bass_cum_scenario.astype(int),
                 "Kullanici (Logistic)": logistic_scenario.astype(int),
                 "Kullanici (Log-Logistic)": log_logistic_scenario.astype(int),
-                "Icerik (Bass) Aylik": bass_content_monthly.astype(int),
-                "Icerik (Poisson) Aylik": poisson_content_monthly.astype(int),
-                "Icerik (Lineer) Aylik": linear_content_monthly.astype(int),
-                "Icerik (Log-Logistic) Aylik": log_logistic_content_monthly.astype(int),
-                "Icerik (Bass) Kümülatif": bass_content.astype(int),
+                "Icerik (Bass)": bass_content.astype(int),
                 "Icerik (Poisson) Kümülatif": poisson_content.astype(int),
                 "Icerik (Lineer) Kümülatif": linear_content.astype(int),
                 "Icerik (Log-Logistic) Kümülatif": log_logistic_content.astype(int),
                 "Aktif (%)": (markov_states[:, 0] * 100).round(1),
-                "Churn (%)": (markov_states[:, 2] * 100).round(1),
+                "Churn (%)": (markov_states[:, 2] * 100).round(1)
             })
 
             projection_df_global = projection_df.copy()
