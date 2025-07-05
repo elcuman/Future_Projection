@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # Arka planda grafik üretimi
 from flask import Flask, render_template, request, send_file, redirect, url_for
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,19 +49,34 @@ def create_projection_graphs(df):
     plt.savefig(os.path.join(static_path, 'kullanici_projeksiyon.png'))
     plt.close()
 
-    # İçerik grafiği
+    # Aylık İçerik grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='green', marker='o')
-    plt.plot(df["Ay"], df["Icerik (Poisson)"], label="İçerik (Poisson)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer)"], label="İçerik (Lineer)", color='purple', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
+    plt.plot(df["Ay"], df["Icerik (Bass) Aylik"], label="İçerik (Bass) Aylık", color='green', marker='o')
+    plt.plot(df["Ay"], df["Icerik (Poisson) Aylik"], label="İçerik (Poisson) Aylık", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer) Aylik"], label="İçerik (Lineer) Aylık", color='purple', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Aylik"], label="İçerik (Log-Logistic) Aylık", color='orange', linestyle=':')
     plt.xlabel("Ay")
-    plt.ylabel("İçerik Sayısı")
-    plt.title("İçerik Sayısı Projeksiyonu")
+    plt.ylabel("Aylık İçerik Sayısı")
+    plt.title("Aylık İçerik Sayısı Projeksiyonu")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(static_path, 'icerik_projeksiyon.png'))
+    plt.savefig(os.path.join(static_path, 'icerik_aylik_projeksiyon.png'))
+    plt.close()
+
+    # Kümülatif İçerik grafiği
+    plt.figure(figsize=(14, 6))
+    plt.plot(df["Ay"], df["Icerik (Bass) Kümülatif"], label="İçerik (Bass) Kümülatif", color='darkgreen', linestyle='-')
+    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="İçerik (Poisson) Kümülatif", color='darkblue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="İçerik (Lineer) Kümülatif", color='indigo', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="İçerik (Log-Logistic) Kümülatif", color='darkorange', linestyle=':')
+    plt.xlabel("Ay")
+    plt.ylabel("Kümülatif İçerik Sayısı")
+    plt.title("Kümülatif İçerik Sayısı Projeksiyonu")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(static_path, 'icerik_kumulatif_projeksiyon.png'))
     plt.close()
 
 projection_df_global = None
@@ -109,7 +124,6 @@ def index():
 
             bass_new = bass_model_vectorized(months, p, q, m)
             bass_cum = np.cumsum(bass_new) + initial_users
-
             logistic = logistic_growth(months, m, 0.5, proj_months / 2) + initial_users
             log_logistic = log_logistic_growth(months, m, proj_months / 2, 2) + initial_users
 
@@ -123,11 +137,6 @@ def index():
             logistic_scenario = logistic * scale_factor
             log_logistic_scenario = log_logistic * scale_factor
 
-            bass_content = initial_content + np.cumsum(bass_cum_scenario * writer_ratio * monthly_post_rate)
-            poisson_content = initial_content + np.cumsum(logistic_scenario * writer_ratio * monthly_post_rate)
-            linear_content = initial_content + np.cumsum(logistic_scenario * writer_ratio * monthly_post_rate * 0.9)
-            log_logistic_content = initial_content + np.cumsum(log_logistic_scenario * writer_ratio * monthly_post_rate)
-
             transitions = np.array([
                 [0.85, 0.1, 0.05],
                 [0.05, 0.75, 0.20],
@@ -136,15 +145,48 @@ def index():
             initial_state = np.array([1.0, 0.0, 0.0])
             markov_states = simulate_markov(initial_state, transitions, proj_months)
 
+            # **Aylık içerik hesaplama**
+            bass_content_monthly = np.zeros(proj_months)
+            poisson_content_monthly = np.zeros(proj_months)
+            linear_content_monthly = np.zeros(proj_months)
+            log_logistic_content_monthly = np.zeros(proj_months)
+
+            for i in range(proj_months):
+                churn_factor = markov_states[i, 0]  # Aktif kullanıcı oranı
+                motivasyon = max(0.3, 1 - (0.7 * (i / (proj_months - 1))))  # Motivasyon %30 altına inmesin
+
+                bass_content_monthly[i] = (
+                    bass_cum_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
+                )
+                poisson_content_monthly[i] = (
+                    logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
+                )
+                linear_content_monthly[i] = (
+                    logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon * 0.9
+                )
+                log_logistic_content_monthly[i] = (
+                    log_logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
+                )
+
+            # **Kümülatif içerik hesaplama**
+            bass_content = initial_content + np.cumsum(bass_content_monthly)
+            poisson_content = initial_content + np.cumsum(poisson_content_monthly)
+            linear_content = initial_content + np.cumsum(linear_content_monthly)
+            log_logistic_content = initial_content + np.cumsum(log_logistic_content_monthly)
+
             projection_df = pd.DataFrame({
                 "Ay": months,
                 "Kullanici (Bass)": bass_cum_scenario.astype(int),
                 "Kullanici (Logistic)": logistic_scenario.astype(int),
                 "Kullanici (Log-Logistic)": log_logistic_scenario.astype(int),
-                "Icerik (Bass)": bass_content.astype(int),
-                "Icerik (Poisson)": poisson_content.astype(int),
-                "Icerik (Lineer)": linear_content.astype(int),
-                "Icerik (Log-Logistic)": log_logistic_content.astype(int),
+                "Icerik (Bass) Aylik": bass_content_monthly.astype(int),
+                "Icerik (Poisson) Aylik": poisson_content_monthly.astype(int),
+                "Icerik (Lineer) Aylik": linear_content_monthly.astype(int),
+                "Icerik (Log-Logistic) Aylik": log_logistic_content_monthly.astype(int),
+                "Icerik (Bass) Kümülatif": bass_content.astype(int),
+                "Icerik (Poisson) Kümülatif": poisson_content.astype(int),
+                "Icerik (Lineer) Kümülatif": linear_content.astype(int),
+                "Icerik (Log-Logistic) Kümülatif": log_logistic_content.astype(int),
                 "Aktif (%)": (markov_states[:, 0] * 100).round(1),
                 "Churn (%)": (markov_states[:, 2] * 100).round(1),
             })
