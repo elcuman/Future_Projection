@@ -138,8 +138,8 @@
         <h5>Kullanıcı Projeksiyonu</h5>
         <img src="{{ url_for('static', filename='graphs/kullanici_projeksiyon.png') }}" class="img-fluid mb-4" alt="Kullanıcı Grafiği">
 
-        <h5>Aylık İçerik Projeksiyonu</h5>
-        <img src="{{ url_for('static', filename='graphs/icerik_aylik_projeksiyon.png') }}" class="img-fluid mb-4" alt="Aylık İçerik Grafiği">
+        <h5>Aylık İçerik Projeksiyonu - Tüm Modeller</h5>
+        <img src="{{ url_for('static', filename='graphs/icerik_aylik_tum_modeller.png') }}" class="img-fluid mb-4" alt="Aylık İçerik Tüm Modeller Grafiği">
 
         <h5>Kümülatif İçerik Projeksiyonu</h5>
         <img src="{{ url_for('static', filename='graphs/icerik_kumulatif_projeksiyon.png') }}" class="img-fluid" alt="Kümülatif İçerik Grafiği">
@@ -147,9 +147,9 @@
 
     <div class="text-muted small mt-4">
         <p><strong>Modelleme Notu:</strong> Kullanıcı yayılımı <em>Bass Difüzyon Modeli</em> kullanılarak hesaplanmıştır.</p>
-        <p><strong>İçerik Modelleme Notu:</strong> İçerik üretimi, her ay kullanıcıların aktif kalma oranı (churn) ve içerik üretme motivasyonlarının zamanla %30’a kadar azalması göz önünde bulundurularak hesaplanmıştır.</p>
+        <p>İçerik üretimi, her ay kullanıcıların aktif kalma oranı (churn) ve içerik üretme motivasyonlarının zamanla azalması göz önünde bulundurularak hesaplanmıştır.</p>
         <p> TÜİK verilerine göre internete erişimi olan kişi sayısı: <strong>75 Milyon Kişidir</strong>.</p>
-        <p>Girilen pazar büyüklüğü <strong>{{ form_values.market_size }}</strong> olup, önümüzdeki yıl içerisinde bu kadar kullanıcıya erişileceği öngörülmüştür.</p>
+        <p>Girilen pazar büyüklüğü <strong>{{ form_values.market_size }}</strong> olup, seçilen projeksiyon dönemi içerisinde bu kadar potansiyele kullanıcıya erişileceği öngörülmüştür.</p>
         <p><strong>Not:</strong> Bass modelindeki <code>p</code> ve <code>q</code> değerleri literatürde genellikle <code>p=0.01–0.03</code> ve <code>q=0.3–0.5</code> aralığında kabul görmektedir.</p>
         <p>İçerik Üretim Oranları: Sosyal medya platformlarında içerik üreticisi oranı genellikle <em>1% kuralı</em> ile %1–%9 arasında değişen kreatör kullanıcılar olarak tanımlanmaktadır.</p>
         <p><strong>Kaynaklar:</strong></p>
