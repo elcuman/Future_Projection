@@ -2,10 +2,8 @@ import matplotlib
 matplotlib.use('Agg')
 from flask import Flask, render_template, request, send_file, redirect, url_for
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-import matplotlib.ticker as mtick
 import io
 import os
 
@@ -25,53 +23,43 @@ def logistic_growth(t, K, r, t0):
 def log_logistic_growth(t, K, alpha, beta):
     return K / (1 + (t / alpha) ** (-beta))
 
-# Markov Geçiş Simülasyonu
+# Markov Simülasyonu
 def simulate_markov(initial_state, transitions, steps):
     states = [initial_state]
     for _ in range(steps - 1):
         states.append(states[-1] @ transitions)
     return np.array(states)
 
-# Grafik Oluşturucu
+# Grafik Üretici
 def create_projection_graphs(df):
     static_path = os.path.join('static', 'graphs')
     os.makedirs(static_path, exist_ok=True)
 
-    sns.set_theme(style="whitegrid", palette="muted", font_scale=1.2)
-
-    months_labels = ['Eylül', 'Ekim', 'Kasım', 'Aralık', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos']
-
     # Kullanıcı grafiği
-    plt.figure(figsize=(12, 7))
-    sns.lineplot(x=df["Ay"], y=df["Kullanici (Bass)"], label="Kullanıcı (Bass)", marker='o', linewidth=2)
-    sns.lineplot(x=df["Ay"], y=df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", marker='s', linewidth=2)
-    sns.lineplot(x=df["Ay"], y=df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", marker='^', linewidth=2)
+    plt.figure(figsize=(14, 6))
+    plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
+    plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
     plt.xlabel("Ay")
     plt.ylabel("Kullanıcı Sayısı")
-    plt.title("Kullanıcı Sayısı Projeksiyonu", fontsize=16)
-    plt.xticks(df["Ay"], months_labels, rotation=45)
-    plt.gca().yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{int(x):,}'.replace(',', '.')))
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.legend(fontsize=12)
-    sns.despine()
+    plt.title("Kullanıcı Sayısı Projeksiyonu")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.savefig(os.path.join(static_path, 'kullanici_projeksiyon.png'))
     plt.close()
 
     # İçerik grafiği
-    plt.figure(figsize=(12, 7))
-    sns.lineplot(x=df["Ay"], y=df["Icerik (Bass)"], label="İçerik (Bass)", marker='o', linewidth=2)
-    sns.lineplot(x=df["Ay"], y=df["Icerik (Poisson)"], label="İçerik (Poisson)", marker='s', linewidth=2)
-    sns.lineplot(x=df["Ay"], y=df["Icerik (Lineer)"], label="İçerik (Lineer)", marker='D', linewidth=2)
-    sns.lineplot(x=df["Ay"], y=df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", marker='^', linewidth=2)
+    plt.figure(figsize=(14, 6))
+    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='green', marker='o')
+    plt.plot(df["Ay"], df["Icerik (Poisson)"], label="İçerik (Poisson)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer)"], label="İçerik (Lineer)", color='purple', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic)"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
     plt.xlabel("Ay")
     plt.ylabel("İçerik Sayısı")
-    plt.title("İçerik Sayısı Projeksiyonu", fontsize=16)
-    plt.xticks(df["Ay"], months_labels, rotation=45)
-    plt.gca().yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{int(x):,}'.replace(',', '.')))
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.legend(fontsize=12)
-    sns.despine()
+    plt.title("İçerik Sayısı Projeksiyonu")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.savefig(os.path.join(static_path, 'icerik_projeksiyon.png'))
     plt.close()
@@ -91,7 +79,8 @@ def index():
         'daily_posts': '',
         'initial_users': '0',
         'initial_content': '0',
-        'content_scenario': 'realistic'
+        'content_scenario': 'realistic',
+        'proj_months': '12'
     }
 
     if request.method == 'POST':
@@ -104,6 +93,7 @@ def index():
             form_values['initial_users'] = request.form['initial_users']
             form_values['initial_content'] = request.form['initial_content']
             form_values['content_scenario'] = request.form.get('content_scenario', 'realistic')
+            form_values['proj_months'] = request.form.get('proj_months', '12')
 
             m = int(form_values['market_size'])
             p = float(form_values['p']) / 100
@@ -112,22 +102,22 @@ def index():
             daily_posts = float(form_values['daily_posts'])
             initial_users = int(form_values['initial_users'])
             initial_content = int(form_values['initial_content'])
+            proj_months = int(form_values['proj_months'])
 
-            months = np.arange(1, 13)
+            months = np.arange(1, proj_months + 1)
             monthly_post_rate = daily_posts * 30
 
             bass_new = bass_model_vectorized(months, p, q, m)
             bass_cum = np.cumsum(bass_new) + initial_users
 
-            logistic = logistic_growth(months, m, 0.5, 6) + initial_users
-            log_logistic = log_logistic_growth(months, m, 6, 2) + initial_users
+            logistic = logistic_growth(months, m, 0.5, proj_months / 2) + initial_users
+            log_logistic = log_logistic_growth(months, m, proj_months / 2, 2) + initial_users
 
-            if form_values['content_scenario'] == 'optimistic':
-                scale_factor = 1.2
-            elif form_values['content_scenario'] == 'pessimistic':
-                scale_factor = 0.7
-            else:
-                scale_factor = 1.0
+            scale_factor = {
+                'optimistic': 1.2,
+                'pessimistic': 0.7,
+                'realistic': 1.0
+            }.get(form_values['content_scenario'], 1.0)
 
             bass_cum_scenario = bass_cum * scale_factor
             logistic_scenario = logistic * scale_factor
@@ -144,7 +134,7 @@ def index():
                 [0.0, 0.0, 1.0]
             ])
             initial_state = np.array([1.0, 0.0, 0.0])
-            markov_states = simulate_markov(initial_state, transitions, 12)
+            markov_states = simulate_markov(initial_state, transitions, proj_months)
 
             projection_df = pd.DataFrame({
                 "Ay": months,
