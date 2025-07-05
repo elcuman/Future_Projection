@@ -1,83 +1,88 @@
 import matplotlib
-matplotlib.use('Agg')  # Arka planda grafik üretimi
+matplotlib.use('Agg')
+
 from flask import Flask, render_template, request, send_file, redirect, url_for
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import io
 import os
+from matplotlib.ticker import ScalarFormatter
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 
-# Bass Difüzyon Modeli
 def bass_model_vectorized(t, p, q, m):
     adoption_cum = m * (1 - np.exp(-(p + q) * t)) / (1 + (q / p) * np.exp(-(p + q) * t))
     adoption_new = np.diff(np.insert(adoption_cum, 0, 0))
     return adoption_new
 
-# Lojistik Büyüme
 def logistic_growth(t, K, r, t0):
     return K / (1 + np.exp(-r * (t - t0)))
 
-# Log-Logistik Büyüme
 def log_logistic_growth(t, K, alpha, beta):
     return K / (1 + (t / alpha) ** (-beta))
 
-# Markov Simülasyonu
 def simulate_markov(initial_state, transitions, steps):
     states = [initial_state]
     for _ in range(steps - 1):
         states.append(states[-1] @ transitions)
     return np.array(states)
 
-# Grafik Üretici
+# Türkçe ay adları
+def generate_month_labels(start_date, num_months):
+    turkce_aylar = [
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ]
+    tarih_listesi = []
+    for i in range(num_months):
+        tarih = start_date + relativedelta(months=i)
+        ay_isim = turkce_aylar[tarih.month - 1]
+        tarih_listesi.append(f"{ay_isim} {tarih.year}")
+    return tarih_listesi
+
 def create_projection_graphs(df):
     static_path = os.path.join('static', 'graphs')
     os.makedirs(static_path, exist_ok=True)
+    plt.rcParams['font.family'] = 'DejaVu Sans'
 
-    # Kullanıcı grafiği
+    def disable_sci_format():
+        plt.gca().yaxis.set_major_formatter(ScalarFormatter(useMathText=False))
+        plt.ticklabel_format(style='plain', axis='y')
+
+    def finalize_plot(title, ylabel, filename):
+        disable_sci_format()
+        plt.xlabel("Ay")
+        plt.ylabel(ylabel)
+        plt.legend()
+        plt.grid(True)
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.subplots_adjust(bottom=0.2)
+        plt.savefig(os.path.join(static_path, filename))
+        plt.close()
+
     plt.figure(figsize=(14, 6))
     plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
     plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
     plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
-    plt.xlabel("Ay")
-    plt.ylabel("Kullanıcı Sayısı")
-    plt.title("Kullanıcı Sayısı Projeksiyonu")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(static_path, 'kullanici_projeksiyon.png'))
-    plt.close()
+    finalize_plot("Kullanıcı Projeksiyonu", "Kullanıcı Sayısı", 'kullanici_projeksiyon.png')
 
-    # Aylık İçerik grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass) Aylik"], label="İçerik (Bass) Aylık", color='green', marker='o')
-    plt.plot(df["Ay"], df["Icerik (Poisson) Aylik"], label="İçerik (Poisson) Aylık", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer) Aylik"], label="İçerik (Lineer) Aylık", color='purple', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Aylik"], label="İçerik (Log-Logistic) Aylık", color='orange', linestyle=':')
-    plt.xlabel("Ay")
-    plt.ylabel("Aylık İçerik Sayısı")
-    plt.title("Aylık İçerik Sayısı Projeksiyonu")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(static_path, 'icerik_aylik_projeksiyon.png'))
-    plt.close()
+    plt.plot(df["Ay"], df["Icerik (Bass) Aylik"], label="İçerik (Bass)", color='green', marker='o')
+    plt.plot(df["Ay"], df["Icerik (Poisson) Aylik"], label="İçerik (Poisson)", color='blue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer) Aylik"], label="İçerik (Lineer)", color='purple', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Aylik"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
+    finalize_plot("Aylık İçerik Projeksiyonu", "Aylık İçerik", 'icerik_aylik_projeksiyon.png')
 
-    # Kümülatif İçerik grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass) Kümülatif"], label="İçerik (Bass) Kümülatif", color='darkgreen', linestyle='-')
-    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="İçerik (Poisson) Kümülatif", color='darkblue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="İçerik (Lineer) Kümülatif", color='indigo', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="İçerik (Log-Logistic) Kümülatif", color='darkorange', linestyle=':')
-    plt.xlabel("Ay")
-    plt.ylabel("Kümülatif İçerik Sayısı")
-    plt.title("Kümülatif İçerik Sayısı Projeksiyonu")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(static_path, 'icerik_kumulatif_projeksiyon.png'))
-    plt.close()
+    plt.plot(df["Ay"], df["Icerik (Bass) Kümülatif"], label="Bass", color='darkgreen', linestyle='-')
+    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="Poisson", color='darkblue', linestyle='--')
+    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="Lineer", color='indigo', linestyle='-.')
+    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="Log-Logistic", color='darkorange', linestyle=':')
+    finalize_plot("Kümülatif İçerik Projeksiyonu", "Toplam İçerik", 'icerik_kumulatif_projeksiyon.png')
 
 projection_df_global = None
 
@@ -100,15 +105,17 @@ def index():
 
     if request.method == 'POST':
         try:
-            form_values['market_size'] = request.form['market_size']
-            form_values['p'] = request.form['p']
-            form_values['q'] = request.form['q']
-            form_values['writer_ratio'] = request.form['writer_ratio']
-            form_values['daily_posts'] = request.form['daily_posts']
-            form_values['initial_users'] = request.form['initial_users']
-            form_values['initial_content'] = request.form['initial_content']
-            form_values['content_scenario'] = request.form.get('content_scenario', 'realistic')
-            form_values['proj_months'] = request.form.get('proj_months', '12')
+            form_values.update({
+                'market_size': request.form['market_size'],
+                'p': request.form['p'],
+                'q': request.form['q'],
+                'writer_ratio': request.form['writer_ratio'],
+                'daily_posts': request.form['daily_posts'],
+                'initial_users': request.form['initial_users'],
+                'initial_content': request.form['initial_content'],
+                'content_scenario': request.form.get('content_scenario', 'realistic'),
+                'proj_months': request.form.get('proj_months', '12'),
+            })
 
             m = int(form_values['market_size'])
             p = float(form_values['p']) / 100
@@ -145,37 +152,30 @@ def index():
             initial_state = np.array([1.0, 0.0, 0.0])
             markov_states = simulate_markov(initial_state, transitions, proj_months)
 
-            # **Aylık içerik hesaplama**
             bass_content_monthly = np.zeros(proj_months)
             poisson_content_monthly = np.zeros(proj_months)
             linear_content_monthly = np.zeros(proj_months)
             log_logistic_content_monthly = np.zeros(proj_months)
 
             for i in range(proj_months):
-                churn_factor = markov_states[i, 0]  # Aktif kullanıcı oranı
-                motivasyon = max(0.3, 1 - (0.7 * (i / (proj_months - 1))))  # Motivasyon %30 altına inmesin
+                churn_factor = markov_states[i, 0]
+                motivasyon = max(0.3, 1 - (0.7 * (i / (proj_months - 1))))
+                bass_content_monthly[i] = bass_cum_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
+                poisson_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
+                linear_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon * 0.9
+                log_logistic_content_monthly[i] = log_logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
 
-                bass_content_monthly[i] = (
-                    bass_cum_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
-                )
-                poisson_content_monthly[i] = (
-                    logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
-                )
-                linear_content_monthly[i] = (
-                    logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon * 0.9
-                )
-                log_logistic_content_monthly[i] = (
-                    log_logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
-                )
-
-            # **Kümülatif içerik hesaplama**
             bass_content = initial_content + np.cumsum(bass_content_monthly)
             poisson_content = initial_content + np.cumsum(poisson_content_monthly)
             linear_content = initial_content + np.cumsum(linear_content_monthly)
             log_logistic_content = initial_content + np.cumsum(log_logistic_content_monthly)
 
+            # 📌 Projeksiyon Eylül 2025'ten başlasın
+            start_date = datetime(2025, 9, 1)
+            month_labels = generate_month_labels(start_date, proj_months)
+
             projection_df = pd.DataFrame({
-                "Ay": months,
+                "Ay": month_labels,
                 "Kullanici (Bass)": bass_cum_scenario.astype(int),
                 "Kullanici (Logistic)": logistic_scenario.astype(int),
                 "Kullanici (Log-Logistic)": log_logistic_scenario.astype(int),
