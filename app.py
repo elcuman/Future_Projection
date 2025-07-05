@@ -1,15 +1,16 @@
-import matplotlib
-matplotlib.use('Agg')
-
-from flask import Flask, render_template, request, send_file, redirect, url_for
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import io
 import os
-from matplotlib.ticker import ScalarFormatter
+import io
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
+import seaborn as sns
+from flask import Flask, render_template, request, send_file, redirect, url_for
 
 app = Flask(__name__)
 
@@ -47,6 +48,9 @@ def create_projection_graphs(df):
     os.makedirs(static_path, exist_ok=True)
     plt.rcParams['font.family'] = 'DejaVu Sans'
 
+    # Seaborn tema ayarı
+    sns.set_theme(style="whitegrid")
+
     def disable_sci_format():
         plt.gca().yaxis.set_major_formatter(ScalarFormatter(useMathText=False))
         plt.ticklabel_format(style='plain', axis='y')
@@ -65,18 +69,26 @@ def create_projection_graphs(df):
 
     # Kullanıcı Grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Kullanici (Bass)"], label="Kullanıcı (Bass)", color='green', marker='o')
-    plt.plot(df["Ay"], df["Kullanici (Logistic)"], label="Kullanıcı (Logistic)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Kullanici (Log-Logistic)"], label="Kullanıcı (Log-Logistic)", color='orange', linestyle=':')
+    sns.lineplot(x="Ay", y="Kullanici (Bass)", data=df, label="Kullanıcı (Bass)", marker='o', color='green')
+    sns.lineplot(x="Ay", y="Kullanici (Logistic)", data=df, label="Kullanıcı (Logistic)", linestyle='--', color='blue')
+    sns.lineplot(x="Ay", y="Kullanici (Log-Logistic)", data=df, label="Kullanıcı (Log-Logistic)", linestyle=':', color='orange')
     finalize_plot("Kullanıcı Projeksiyonu", "Kullanıcı Sayısı", 'kullanici_projeksiyon.png')
 
     # Kümülatif İçerik Grafiği
     plt.figure(figsize=(14, 6))
-    plt.plot(df["Ay"], df["Icerik (Bass)"], label="İçerik (Bass)", color='darkgreen')
-    plt.plot(df["Ay"], df["Icerik (Poisson) Kümülatif"], label="İçerik (Poisson)", color='blue', linestyle='--')
-    plt.plot(df["Ay"], df["Icerik (Lineer) Kümülatif"], label="İçerik (Lineer)", color='purple', linestyle='-.')
-    plt.plot(df["Ay"], df["Icerik (Log-Logistic) Kümülatif"], label="İçerik (Log-Logistic)", color='orange', linestyle=':')
+    sns.lineplot(x="Ay", y="Icerik (Bass)", data=df, label="İçerik (Bass)", color='darkgreen')
+    sns.lineplot(x="Ay", y="Icerik (Poisson) Kümülatif", data=df, label="İçerik (Poisson)", linestyle='--', color='blue')
+    sns.lineplot(x="Ay", y="Icerik (Lineer) Kümülatif", data=df, label="İçerik (Lineer)", linestyle='-.', color='purple')
+    sns.lineplot(x="Ay", y="Icerik (Log-Logistic) Kümülatif", data=df, label="İçerik (Log-Logistic)", linestyle=':', color='orange')
     finalize_plot("Kümülatif İçerik Projeksiyonu", "Toplam İçerik", 'icerik_kumulatif_projeksiyon.png')
+
+    # Aylık İçerik Tüm Modeller Tek Grafik
+    plt.figure(figsize=(14, 6))
+    sns.lineplot(x="Ay", y="Icerik Aylik (Bass)", data=df, label="İçerik Aylık (Bass)", marker='o')
+    sns.lineplot(x="Ay", y="Icerik Aylik (Poisson)", data=df, label="İçerik Aylık (Poisson)", linestyle='--')
+    sns.lineplot(x="Ay", y="Icerik Aylik (Lineer)", data=df, label="İçerik Aylık (Lineer)", linestyle='-.')
+    sns.lineplot(x="Ay", y="Icerik Aylik (Log-Logistic)", data=df, label="İçerik Aylık (Log-Logistic)", linestyle=':')
+    finalize_plot("Aylık İçerik Projeksiyonu - Tüm Modeller", "Aylık İçerik Sayısı", 'icerik_aylik_tum_modeller.png')
 
 projection_df_global = None
 
@@ -141,8 +153,10 @@ def index():
             transitions = np.array([
                 [0.85, 0.1, 0.05],
                 [0.05, 0.75, 0.20],
-                [0.0, 0.0, 1.0]
+                [0.02, 0.03, 0.95]
             ])
+
+           
             initial_state = np.array([1.0, 0.0, 0.0])
             markov_states = simulate_markov(initial_state, transitions, proj_months)
 
@@ -159,10 +173,10 @@ def index():
                 linear_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon * 0.9
                 log_logistic_content_monthly[i] = log_logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
 
-            bass_content = initial_content + np.cumsum(bass_content_monthly)
-            poisson_content = initial_content + np.cumsum(poisson_content_monthly)
-            linear_content = initial_content + np.cumsum(linear_content_monthly)
-            log_logistic_content = initial_content + np.cumsum(log_logistic_content_monthly)
+            bass_content_cum = initial_content + np.cumsum(bass_content_monthly)
+            poisson_content_cum = initial_content + np.cumsum(poisson_content_monthly)
+            linear_content_cum = initial_content + np.cumsum(linear_content_monthly)
+            log_logistic_content_cum = initial_content + np.cumsum(log_logistic_content_monthly)
 
             start_date = datetime(2025, 9, 1)
             month_labels = generate_month_labels(start_date, proj_months)
@@ -172,12 +186,17 @@ def index():
                 "Kullanici (Bass)": bass_cum_scenario.astype(int),
                 "Kullanici (Logistic)": logistic_scenario.astype(int),
                 "Kullanici (Log-Logistic)": log_logistic_scenario.astype(int),
-                "Icerik (Bass)": bass_content.astype(int),
-                "Icerik (Poisson) Kümülatif": poisson_content.astype(int),
-                "Icerik (Lineer) Kümülatif": linear_content.astype(int),
-                "Icerik (Log-Logistic) Kümülatif": log_logistic_content.astype(int),
+                "Icerik (Bass)": bass_content_cum.astype(int),
+                "Icerik (Poisson) Kümülatif": poisson_content_cum.astype(int),
+                "Icerik (Lineer) Kümülatif": linear_content_cum.astype(int),
+                "Icerik (Log-Logistic) Kümülatif": log_logistic_content_cum.astype(int),
                 "Aktif (%)": (markov_states[:, 0] * 100).round(1),
-                "Churn (%)": (markov_states[:, 2] * 100).round(1)
+                "Churn (%)": (markov_states[:, 2] * 100).round(1),
+                # Aylık içerik kolonları - yeni eklendi
+                "Icerik Aylik (Bass)": bass_content_monthly.astype(int),
+                "Icerik Aylik (Poisson)": poisson_content_monthly.astype(int),
+                "Icerik Aylik (Lineer)": linear_content_monthly.astype(int),
+                "Icerik Aylik (Log-Logistic)": log_logistic_content_monthly.astype(int),
             })
 
             projection_df_global = projection_df.copy()
