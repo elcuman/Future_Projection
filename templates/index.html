@@ -144,7 +144,9 @@
         <h5>Kümülatif İçerik Projeksiyonu</h5>
         <img src="{{ url_for('static', filename='graphs/icerik_kumulatif_projeksiyon.png') }}" class="img-fluid" alt="Kümülatif İçerik Grafiği">
     </div>
+    {% endif %}
 
+    <!-- BU KISIM ARTIK HER ZAMAN GÖRÜNÜR -->
     <div class="text-muted small mt-4">
         <p><strong>Modelleme Notu:</strong> Kullanıcı yayılımı <em>Bass Difüzyon Modeli</em> kullanılarak hesaplanmıştır.</p>
         <p>İçerik üretimi, her ay kullanıcıların aktif kalma oranı (churn) ve içerik üretme motivasyonlarının zamanla azalması göz önünde bulundurularak hesaplanmıştır.</p>
@@ -171,6 +173,6 @@
             </li>
         </ul>
     </div>
-    {% endif %}
+
 </body>
 </html>
