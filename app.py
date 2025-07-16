@@ -167,7 +167,7 @@ def index():
 
             for i in range(proj_months):
                 churn_factor = markov_states[i, 0]
-                motivasyon = max(0.3, 1 - (0.7 * (i / (proj_months - 1))))
+                motivasyon = max(0.3, 1 - (0.85 * (i / (proj_months - 1))))
                 bass_content_monthly[i] = bass_cum_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
                 poisson_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon
                 linear_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * motivasyon * 0.9
