@@ -48,7 +48,6 @@ def create_projection_graphs(df):
     os.makedirs(static_path, exist_ok=True)
     plt.rcParams['font.family'] = 'DejaVu Sans'
 
-    # Seaborn tema ayarı
     sns.set_theme(style="whitegrid")
 
     def disable_sci_format():
@@ -67,25 +66,20 @@ def create_projection_graphs(df):
         plt.savefig(os.path.join(static_path, filename))
         plt.close()
 
-    # Kullanıcı Grafiği
     plt.figure(figsize=(14, 6))
     sns.lineplot(x="Ay", y="Kullanici (Bass)", data=df, label="Kullanıcı (Bass)", marker='o', color='green')
     sns.lineplot(x="Ay", y="Kullanici (Logistic)", data=df, label="Kullanıcı (Logistic)", linestyle='--', color='blue')
     sns.lineplot(x="Ay", y="Kullanici (Log-Logistic)", data=df, label="Kullanıcı (Log-Logistic)", linestyle=':', color='orange')
     finalize_plot("Kullanıcı Projeksiyonu", "Kullanıcı Sayısı", 'kullanici_projeksiyon.png')
 
-    # Kümülatif İçerik Grafiği
     plt.figure(figsize=(14, 6))
     sns.lineplot(x="Ay", y="Icerik (Bass)", data=df, label="İçerik (Bass)", color='darkgreen')
-    sns.lineplot(x="Ay", y="Icerik (Poisson) Kümülatif", data=df, label="İçerik (Poisson)", linestyle='--', color='blue')
     sns.lineplot(x="Ay", y="Icerik (Lineer) Kümülatif", data=df, label="İçerik (Lineer)", linestyle='-.', color='purple')
     sns.lineplot(x="Ay", y="Icerik (Log-Logistic) Kümülatif", data=df, label="İçerik (Log-Logistic)", linestyle=':', color='orange')
     finalize_plot("Kümülatif İçerik Projeksiyonu", "Toplam İçerik", 'icerik_kumulatif_projeksiyon.png')
 
-    # Aylık İçerik Tüm Modeller Tek Grafik
     plt.figure(figsize=(14, 6))
     sns.lineplot(x="Ay", y="Icerik Aylik (Bass)", data=df, label="İçerik Aylık (Bass)", marker='o')
-    sns.lineplot(x="Ay", y="Icerik Aylik (Poisson)", data=df, label="İçerik Aylık (Poisson)", linestyle='--')
     sns.lineplot(x="Ay", y="Icerik Aylik (Lineer)", data=df, label="İçerik Aylık (Lineer)", linestyle='-.')
     sns.lineplot(x="Ay", y="Icerik Aylik (Log-Logistic)", data=df, label="İçerik Aylık (Log-Logistic)", linestyle=':')
     finalize_plot("Aylık İçerik Projeksiyonu - Tüm Modeller", "Aylık İçerik Sayısı", 'icerik_aylik_tum_modeller.png')
@@ -98,15 +92,9 @@ def index():
     projection_df = None
     error = None
     form_values = {
-        'market_size': '',
-        'p': '',
-        'q': '',
-        'writer_ratio': '',
-        'daily_posts': '',
-        'initial_users': '0',
-        'initial_content': '0',
-        'content_scenario': 'realistic',
-        'proj_months': '12'
+        'market_size': '', 'p': '', 'q': '', 'writer_ratio': '',
+        'daily_posts': '', 'initial_users': '0', 'initial_content': '0',
+        'content_scenario': 'realistic', 'proj_months': '12'
     }
 
     if request.method == 'POST':
@@ -156,24 +144,20 @@ def index():
                 [0.02, 0.03, 0.95]
             ])
 
-           
             initial_state = np.array([1.0, 0.0, 0.0])
             markov_states = simulate_markov(initial_state, transitions, proj_months)
 
             bass_content_monthly = np.zeros(proj_months)
-            poisson_content_monthly = np.zeros(proj_months)
             linear_content_monthly = np.zeros(proj_months)
             log_logistic_content_monthly = np.zeros(proj_months)
 
             for i in range(proj_months):
                 churn_factor = markov_states[i, 0]
                 bass_content_monthly[i] = bass_cum_scenario[i] * writer_ratio * monthly_post_rate * churn_factor
-                poisson_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor 
-                linear_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor  * 0.9
+                linear_content_monthly[i] = logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor * 0.9
                 log_logistic_content_monthly[i] = log_logistic_scenario[i] * writer_ratio * monthly_post_rate * churn_factor
 
             bass_content_cum = initial_content + np.cumsum(bass_content_monthly)
-            poisson_content_cum = initial_content + np.cumsum(poisson_content_monthly)
             linear_content_cum = initial_content + np.cumsum(linear_content_monthly)
             log_logistic_content_cum = initial_content + np.cumsum(log_logistic_content_monthly)
 
@@ -186,14 +170,11 @@ def index():
                 "Kullanici (Logistic)": logistic_scenario.astype(int),
                 "Kullanici (Log-Logistic)": log_logistic_scenario.astype(int),
                 "Icerik (Bass)": bass_content_cum.astype(int),
-                "Icerik (Poisson) Kümülatif": poisson_content_cum.astype(int),
                 "Icerik (Lineer) Kümülatif": linear_content_cum.astype(int),
                 "Icerik (Log-Logistic) Kümülatif": log_logistic_content_cum.astype(int),
                 "Aktif (%)": (markov_states[:, 0] * 100).round(1),
                 "Churn (%)": (markov_states[:, 2] * 100).round(1),
-                # Aylık içerik kolonları - yeni eklendi
                 "Icerik Aylik (Bass)": bass_content_monthly.astype(int),
-                "Icerik Aylik (Poisson)": poisson_content_monthly.astype(int),
                 "Icerik Aylik (Lineer)": linear_content_monthly.astype(int),
                 "Icerik Aylik (Log-Logistic)": log_logistic_content_monthly.astype(int),
             })
