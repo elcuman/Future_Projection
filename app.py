@@ -47,7 +47,6 @@ def create_projection_graphs(df):
     static_path = os.path.join('static', 'graphs')
     os.makedirs(static_path, exist_ok=True)
     plt.rcParams['font.family'] = 'DejaVu Sans'
-
     sns.set_theme(style="whitegrid")
 
     def disable_sci_format():
@@ -92,9 +91,15 @@ def index():
     projection_df = None
     error = None
     form_values = {
-        'market_size': '', 'p': '', 'q': '', 'writer_ratio': '',
-        'daily_posts': '', 'initial_users': '0', 'initial_content': '0',
-        'content_scenario': 'realistic', 'proj_months': '12'
+        'market_size': '',
+        'p': '',
+        'q': '',
+        'writer_ratio': '',
+        'daily_posts': '',
+        'initial_users': '0',
+        'initial_content': '0',
+        'content_scenario': 'realistic',
+        'proj_months': '12'
     }
 
     if request.method == 'POST':
