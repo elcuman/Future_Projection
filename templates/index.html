@@ -118,8 +118,8 @@
                     <td class="bass-col">{{ "{:,}".format(row._5) }}</td>
                     <td>{{ "{:,}".format(row._7) }}</td>
                     <td>{{ "{:,}".format(row._8) }}</td>
-                    <td>{{ row._9 }}</td>
-                    <td>{{ row._10 }}</td>
+                    <td>{{ "{:.2f}}%".format(row._9) }}</td>
+                    <td>{{ "{:.2f}}%".format(row._10) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -144,14 +144,13 @@
     </div>
     {% endif %}
 
-    <!-- BU KISIM ARTIK HER ZAMAN GÖRÜNÜR -->
     <div class="text-muted small mt-4">
         <p><strong>Modelleme Notu:</strong> Kullanıcı yayılımı <em>Bass Difüzyon Modeli</em> kullanılarak hesaplanmıştır.</p>
-        <p>İçerik üretimi, her ay kullanıcıların aktif kalma oranının (churn)  zamanla azalması göz önünde bulundurularak hesaplanmıştır.</p>
+        <p>İçerik üretimi, her ay kullanıcıların aktif kalma oranının (churn) zamanla azalması göz önünde bulundurularak hesaplanmıştır.</p>
         <p> TÜİK verilerine göre internete erişimi olan kişi sayısı: <strong>75 Milyon Kişidir</strong>.</p>
         <p>Girilen pazar büyüklüğü <strong>{{ form_values.market_size }}</strong>, seçilen projeksiyon dönemi içerisinde bu kadar potansiyele kullanıcıya erişileceği öngörmektedir.</p>
         <p><strong>Not:</strong> Bass modelindeki <code>p</code> ve <code>q</code> değerleri literatürde genellikle <code>Innovator Adoption Rate =0.01–0.03</code> ve <code>Imitator Adoption Rate=0.3–0.5</code> aralığında kabul görmektedir.</p>
-        <p>İçerik Üretim Oranları: Sosyal medya platformlarında içerik üreticisi oranı genellikle <code>%1–%9</code> arasında değişen İçerik Üreticisi  kullanıcılar olarak tanımlanmaktadır.</p>
+        <p>İçerik Üretim Oranları: Sosyal medya platformlarında içerik üreticisi oranı genellikle <code>%1–%9</code> arasında değişen İçerik Üreticisi kullanıcılar olarak tanımlanmaktadır.</p>
         <p> Mevcut durumda son ay verileri incelenediğinde Küre platformunda bir içerik üreticisinin günlük ortalama ürettiği içerik sayısı <code>0.03</code> olarak tespit edilmiştir.</p>
         <p><strong>Kaynaklar:</strong></p>
         <ul>
